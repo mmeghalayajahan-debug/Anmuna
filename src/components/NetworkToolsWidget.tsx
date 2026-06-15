@@ -61,8 +61,14 @@ export default function NetworkToolsWidget({ currentUser, selectedSubTool }: Net
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, user: currentUser?.username || "Anonymous" })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to resolve DNS records");
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Server communication protocol error. Please retry the probe.");
+      }
+      if (!res.ok) throw new Error(data?.error || "Failed to resolve DNS records");
       setDnsResult(data);
     } catch (err: any) {
       setError(err.message);
@@ -83,8 +89,14 @@ export default function NetworkToolsWidget({ currentUser, selectedSubTool }: Net
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, user: currentUser?.username || "Anonymous" })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed WHOIS query");
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Server communication protocol error. Please retry the probe.");
+      }
+      if (!res.ok) throw new Error(data?.error || "Failed WHOIS query");
       setWhoisResult(data.whois);
     } catch (err: any) {
       setError(err.message);
@@ -105,8 +117,14 @@ export default function NetworkToolsWidget({ currentUser, selectedSubTool }: Net
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, user: currentUser?.username || "Anonymous" })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "IP lookup request failed");
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Server communication protocol error. Please retry the probe.");
+      }
+      if (!res.ok) throw new Error(data?.error || "IP lookup request failed");
       setGeoResult(data);
     } catch (err: any) {
       setError(err.message);
@@ -141,8 +159,14 @@ export default function NetworkToolsWidget({ currentUser, selectedSubTool }: Net
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, user: currentUser?.username || "Anonymous" })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Port scanner error occurred");
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Server communication protocol error. Please retry the probe.");
+      }
+      if (!res.ok) throw new Error(data?.error || "Port scanner error occurred");
 
       await addLogDeferred(`[+] Scanning complete. Analyzing open ports...`, 600);
       setPortResult(data.ports);
