@@ -9,9 +9,9 @@ export default function AboutUsWidget() {
   ];
 
   const experts = [
-    { name: "Prof. Jahangir Kabir", role: "Chief Security Officer / Founder", code: "anmuna_root", spec: "Kernel Exploit mitigation, Reverse Engineering, Cryptographic Security Protocol audits." },
-    { name: "Elena Rostova", role: "Threat Recon Specialist", code: "cyber_sentinel", spec: "OSINT forensics tracking, DNS / BGP network mapping, passive subdomain profiling." },
-    { name: "Devon Sterling", role: "DevSecOps Lead Architect", code: "sterling_shield", spec: "Secure cloud environment deployments, virtual firewalls, automated continuous headers auditing." }
+    { name: "Drk Kuyasa Cyber Experts", role: "Chief Security Officer / Founder", code: "kuyasa_root", spec: "Kernel Exploit mitigation, Reverse Engineering, Cryptographic Security Protocol audits." },
+    { name: "Drk Kuyasa Cyber Experts", role: "Threat Recon Specialist", code: "kuyasa_sentinel", spec: "OSINT forensics tracking, DNS / BGP network mapping, passive subdomain profiling." },
+    { name: "Drk Kuyasa Cyber Experts", role: "DevSecOps Lead Architect", code: "kuyasa_shield", spec: "Secure cloud environment deployments, virtual firewalls, automated continuous headers auditing." }
   ];
 
   return (
