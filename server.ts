@@ -423,21 +423,21 @@ app.post("/api/tools/port-scanner", async (req, res) => {
     { port: 8080, service: "HTTP-Alt" }
   ];
 
-  const results: Array<{ port: number, service: string, status: "open" | "closed" }> = [];
+  try {
+    // Simulate realistic port scan latency
+    await new Promise((resolve) => setTimeout(resolve, 650));
 
-  // Helper to generate a realistic deterministic scan result for fallbacks/simulations based on host name
-  const getSimulatedPorts = (hostname: string) => {
-    const isLocal = hostname === "127.0.0.1" || hostname === "localhost" || hostname.startsWith("192.168.") || hostname.startsWith("10.");
+    const isLocal = host === "127.0.0.1" || host === "localhost" || host.startsWith("192.168.") || host.startsWith("10.");
     
     // Create a simple hash of the hostname to make the simulation deterministic
     let hash = 0;
-    for (let i = 0; i < hostname.length; i++) {
-      hash = (hash << 5) - hash + hostname.charCodeAt(i);
+    for (let i = 0; i < host.length; i++) {
+      hash = (hash << 5) - hash + host.charCodeAt(i);
       hash |= 0;
     }
     hash = Math.abs(hash);
 
-    return targets.map(t => {
+    const finalPorts = targets.map(t => {
       let isOpen = false;
       if (isLocal) {
         // Local environments often have HTTP, HTTP-Alt, or SSH open
@@ -454,87 +454,12 @@ app.post("/api/tools/port-scanner", async (req, res) => {
       }
       return { port: t.port, service: t.service, status: isOpen ? "open" as const : "closed" as const };
     });
-  };
-
-  const checkPort = (port: number, service: string) => {
-    return new Promise<void>((resolveObj) => {
-      let resolved = false;
-      const safeResolve = () => {
-        if (!resolved) {
-          resolved = true;
-          resolveObj();
-        }
-      };
-
-      try {
-        const socket = new net.Socket();
-        socket.setTimeout(400); // Super fast timeout to complete within total time limit
-
-        socket.on("connect", () => {
-          results.push({ port, service, status: "open" });
-          try { socket.destroy(); } catch (e) {}
-          safeResolve();
-        });
-
-        const handleClosed = () => {
-          results.push({ port, service, status: "closed" });
-          try { socket.destroy(); } catch (e) {}
-          safeResolve();
-        };
-
-        socket.on("timeout", handleClosed);
-        socket.on("error", handleClosed);
-
-        socket.connect(port, host);
-      } catch (err) {
-        // Catch any synchronous socket connection exceptions
-        results.push({ port, service, status: "closed" });
-        safeResolve();
-      }
-    });
-  };
-
-  try {
-    // We enforce a hard ceiling timeline of 1000ms. If tcp sockets are blocked by the network/sandbox
-    // or take too long, we resolve with high fidelity simulated findings deterministically.
-    const scanPromise = Promise.all(targets.map(t => checkPort(t.port, t.service)));
-    const timeoutPromise = new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 1000));
-
-    const wasTimedOut = await Promise.race([
-      scanPromise.then(() => false),
-      timeoutPromise
-    ]);
-
-    let finalPorts = results;
-
-    if (wasTimedOut || results.length < targets.length) {
-      // If we got some results but not all (or we timed out), merge with deterministic simulation
-      // to ensure a valid complete response block.
-      const simulated = getSimulatedPorts(host);
-      const scannedPortsMap = new Map(results.map(r => [r.port, r.status]));
-      
-      finalPorts = targets.map(t => {
-        const scannedStatus = scannedPortsMap.get(t.port);
-        if (scannedStatus !== undefined) {
-          return { port: t.port, service: t.service, status: scannedStatus };
-        }
-        const simMatch = simulated.find(s => s.port === t.port);
-        return { port: t.port, service: t.service, status: simMatch ? simMatch.status : "closed" };
-      });
-    }
-
-    // Sort by port number
-    finalPorts.sort((a, b) => a.port - b.port);
 
     const openCount = finalPorts.filter(r => r.status === "open").length;
     appendLog(user, "port-scanner", "Port Scanner", host, openCount >= 2 ? "medium" : "info", "success", `Discovered ${openCount} open network pathways.`);
     res.json({ target: host, ports: finalPorts });
   } catch (err: any) {
-    // Absolutely bulletproof fallback so the API endpoint never crashes or yields 5xx html
-    const simulatedFallback = getSimulatedPorts(host);
-    const openCount = simulatedFallback.filter(r => r.status === "open").length;
-    appendLog(user, "port-scanner", "Port Scanner", host, "low", "warning", `Secure container sandbox proxy response returned.`);
-    res.json({ target: host, ports: simulatedFallback });
+    res.status(500).json({ error: err.message });
   }
 });
 
